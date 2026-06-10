@@ -1,22 +1,32 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AI Data Trainer Mastery Course Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: courses
+    description: Course operations
+  - name: modules
+    description: Module operations
+  - name: lessons
+    description: Lesson operations
+  - name: progress
+    description: Progress tracking
+  - name: quizzes
+    description: Quiz operations
+  - name: dashboard
+    description: Dashboard summary
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +34,221 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /courses:
+    get:
+      operationId: listCourses
+      tags: [courses]
+      summary: List all courses
+      responses:
+        "200":
+          description: List of courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+
+  /courses/{id}:
+    get:
+      operationId: getCourse
+      tags: [courses]
+      summary: Get a course by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Course detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseDetail"
+        "404":
+          description: Not found
+
+  /courses/{id}/stats:
+    get:
+      operationId: getCourseStats
+      tags: [courses]
+      summary: Get completion stats for a course
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Course statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseStats"
+
+  /modules/{id}:
+    get:
+      operationId: getModule
+      tags: [modules]
+      summary: Get a module by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Module detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleDetail"
+
+  /lessons/{id}:
+    get:
+      operationId: getLesson
+      tags: [lessons]
+      summary: Get a lesson by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lesson detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+
+  /lessons/{id}/quiz:
+    get:
+      operationId: getLessonQuiz
+      tags: [quizzes]
+      summary: Get quiz for a lesson
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Quiz with questions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quiz"
+        "404":
+          description: No quiz for this lesson
+
+  /progress:
+    get:
+      operationId: getProgress
+      tags: [progress]
+      summary: Get all lesson progress
+      responses:
+        "200":
+          description: Progress list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LessonProgress"
+    post:
+      operationId: markLessonComplete
+      tags: [progress]
+      summary: Mark a lesson as complete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProgressInput"
+      responses:
+        "200":
+          description: Updated progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonProgress"
+
+  /quiz-attempts:
+    post:
+      operationId: submitQuizAttempt
+      tags: [quizzes]
+      summary: Submit quiz answers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuizAttemptInput"
+      responses:
+        "200":
+          description: Quiz result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizResult"
+
+  /quiz-attempts/lesson/{lessonId}:
+    get:
+      operationId: getQuizAttempts
+      tags: [quizzes]
+      summary: Get quiz attempts for a lesson
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of quiz attempts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuizResult"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Overall learning summary for the user
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /certificates:
+    get:
+      operationId: getCertificates
+      tags: [dashboard]
+      summary: Get earned certificates
+      responses:
+        "200":
+          description: List of certificates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Certificate"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +256,304 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    Course:
+      type: object
+      required: [id, title, description, level, durationHours, totalLessons, instructor, category, thumbnail]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        level:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+        durationHours:
+          type: number
+        totalLessons:
+          type: integer
+        instructor:
+          type: string
+        category:
+          type: string
+        thumbnail:
+          type: string
+        completionPercent:
+          type: ["number", "null"]
+
+    CourseDetail:
+      type: object
+      required: [id, title, description, level, durationHours, totalLessons, instructor, category, thumbnail, modules, objectives, prerequisites]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        level:
+          type: string
+        durationHours:
+          type: number
+        totalLessons:
+          type: integer
+        instructor:
+          type: string
+        category:
+          type: string
+        thumbnail:
+          type: string
+        objectives:
+          type: array
+          items:
+            type: string
+        prerequisites:
+          type: array
+          items:
+            type: string
+        modules:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModuleSummary"
+        completionPercent:
+          type: ["number", "null"]
+
+    ModuleSummary:
+      type: object
+      required: [id, title, order, totalLessons]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        order:
+          type: integer
+        totalLessons:
+          type: integer
+        completedLessons:
+          type: ["integer", "null"]
+
+    ModuleDetail:
+      type: object
+      required: [id, courseId, title, order, lessons]
+      properties:
+        id:
+          type: integer
+        courseId:
+          type: integer
+        title:
+          type: string
+        order:
+          type: integer
+        lessons:
+          type: array
+          items:
+            $ref: "#/components/schemas/LessonSummary"
+
+    LessonSummary:
+      type: object
+      required: [id, moduleId, title, type, durationMinutes, order]
+      properties:
+        id:
+          type: integer
+        moduleId:
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+          enum: [video, reading, quiz, exercise]
+        durationMinutes:
+          type: integer
+        order:
+          type: integer
+        completed:
+          type: ["boolean", "null"]
+
+    Lesson:
+      type: object
+      required: [id, moduleId, title, type, durationMinutes, order, content]
+      properties:
+        id:
+          type: integer
+        moduleId:
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+          enum: [video, reading, quiz, exercise]
+        durationMinutes:
+          type: integer
+        order:
+          type: integer
+        content:
+          type: string
+        videoUrl:
+          type: ["string", "null"]
+        hasQuiz:
+          type: boolean
+        completed:
+          type: ["boolean", "null"]
+        nextLessonId:
+          type: ["integer", "null"]
+        prevLessonId:
+          type: ["integer", "null"]
+
+    Quiz:
+      type: object
+      required: [id, lessonId, title, questions]
+      properties:
+        id:
+          type: integer
+        lessonId:
+          type: integer
+        title:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuizQuestion"
+
+    QuizQuestion:
+      type: object
+      required: [id, question, options]
+      properties:
+        id:
+          type: integer
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+
+    QuizAttemptInput:
+      type: object
+      required: [quizId, answers]
+      properties:
+        quizId:
+          type: integer
+        answers:
+          type: array
+          items:
+            type: object
+            required: [questionId, selectedOption]
+            properties:
+              questionId:
+                type: integer
+              selectedOption:
+                type: integer
+
+    QuizResult:
+      type: object
+      required: [id, quizId, score, totalQuestions, correctAnswers, passed, completedAt]
+      properties:
+        id:
+          type: integer
+        quizId:
+          type: integer
+        score:
+          type: number
+        totalQuestions:
+          type: integer
+        correctAnswers:
+          type: integer
+        passed:
+          type: boolean
+        completedAt:
+          type: string
+
+    LessonProgress:
+      type: object
+      required: [lessonId, completed, lastAccessedAt]
+      properties:
+        lessonId:
+          type: integer
+        completed:
+          type: boolean
+        lastAccessedAt:
+          type: string
+
+    ProgressInput:
+      type: object
+      required: [lessonId, completed]
+      properties:
+        lessonId:
+          type: integer
+        completed:
+          type: boolean
+
+    CourseStats:
+      type: object
+      required: [courseId, totalLessons, completedLessons, completionPercent, totalDurationMinutes, estimatedTimeRemainingMinutes, quizzesPassed]
+      properties:
+        courseId:
+          type: integer
+        totalLessons:
+          type: integer
+        completedLessons:
+          type: integer
+        completionPercent:
+          type: number
+        totalDurationMinutes:
+          type: integer
+        estimatedTimeRemainingMinutes:
+          type: integer
+        quizzesPassed:
+          type: integer
+
+    DashboardSummary:
+      type: object
+      required: [totalCoursesEnrolled, totalLessonsCompleted, totalHoursLearned, currentStreak, weeklyProgress, recentLessons]
+      properties:
+        totalCoursesEnrolled:
+          type: integer
+        totalLessonsCompleted:
+          type: integer
+        totalHoursLearned:
+          type: number
+        currentStreak:
+          type: integer
+        weeklyProgress:
+          type: array
+          items:
+            type: object
+            required: [day, lessonsCompleted]
+            properties:
+              day:
+                type: string
+              lessonsCompleted:
+                type: integer
+        recentLessons:
+          type: array
+          items:
+            type: object
+            required: [lessonId, lessonTitle, courseTitle, completedAt]
+            properties:
+              lessonId:
+                type: integer
+              lessonTitle:
+                type: string
+              courseTitle:
+                type: string
+              completedAt:
+                type: string
+
+    Certificate:
+      type: object
+      required: [id, courseId, courseTitle, issuedAt, instructor]
+      properties:
+        id:
+          type: integer
+        courseId:
+          type: integer
+        courseTitle:
+          type: string
+        issuedAt:
+          type: string
+        instructor:
+          type: string

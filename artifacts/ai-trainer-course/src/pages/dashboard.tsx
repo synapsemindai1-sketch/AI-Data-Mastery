@@ -181,13 +181,18 @@ export default function Dashboard() {
                   <div key={cert.id} className="border rounded-xl p-4 bg-gradient-to-br from-primary/5 to-transparent">
                     <div className="flex items-start gap-3">
                       <Award className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold">{cert.courseTitle}</div>
                         <div className="text-xs text-muted-foreground">{cert.instructor}</div>
                         <div className="text-xs text-muted-foreground mt-1">
                           Issued {new Date(cert.issuedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
                         </div>
                       </div>
+                      <Link href={`/certificate/${cert.courseId}`}>
+                        <Button variant="outline" size="sm" className="shrink-0 text-xs h-7">
+                          View
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 ))}

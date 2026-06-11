@@ -9,6 +9,7 @@ import { LearnLayout } from "@/components/layout/learn-layout";
 import Home from "@/pages/home";
 import Courses from "@/pages/courses";
 import CourseDetail from "@/pages/course-detail";
+import CertificatePage from "@/pages/certificate";
 import Lesson from "@/pages/lesson";
 import Quiz from "@/pages/quiz";
 import Dashboard from "@/pages/dashboard";
@@ -43,6 +44,9 @@ function Router() {
             <Route path="/courses" component={Courses} />
             <Route path="/courses/:id">
               {(params) => <CourseDetail id={parseInt(params.id, 10)} />}
+            </Route>
+            <Route path="/certificate/:courseId">
+              {(params) => <CertificatePage courseId={parseInt(params.courseId, 10)} />}
             </Route>
             <Route path="/dashboard" component={Dashboard} />
             <Route component={NotFound} />

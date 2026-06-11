@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useGetCourse, useGetCourseStats, useGetProgress, useGetModule } from "@workspace/api-client-react";
+import { useGetCourse, useGetCourseStats, useGetProgress, useGetModule, useGetCertificates } from "@workspace/api-client-react";
 import { Clock, BookOpen, ChevronRight, CheckCircle2, Circle, PlayCircle, FileText, ClipboardList, Dumbbell, Award, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -77,10 +77,14 @@ export default function CourseDetail({ id }: { id: number }) {
   const { data: course, isLoading } = useGetCourse(id, { query: { enabled: !!id } });
   const { data: stats } = useGetCourseStats(id, { query: { enabled: !!id } });
   const { data: progress } = useGetProgress();
+  const { data: certificates } = useGetCertificates();
 
   const completedLessonIds = new Set(
     (progress ?? []).filter((p) => p.completed).map((p) => p.lessonId)
   );
+
+  const hasCertificate = certificates?.some((c) => c.courseId === id);
+  const isComplete = stats && stats.completionPercent === 100;
 
   if (isLoading) {
     return (
@@ -208,7 +212,23 @@ export default function CourseDetail({ id }: { id: number }) {
             <div className="sticky top-24 bg-card border rounded-2xl overflow-hidden shadow-sm">
               <img src={course.thumbnail} alt={course.title} className="w-full h-44 object-cover" />
               <div className="p-5 space-y-4">
-                <StartButton modules={course.modules} completionPercent={course.completionPercent ?? 0} />
+                {hasCertificate ? (
+                  <Link href={`/certificate/${id}`}>
+                    <Button className="w-full h-11 bg-amber-500 hover:bg-amber-600 text-white gap-2">
+                      <Award className="h-4 w-4" />
+                      View Certificate
+                    </Button>
+                  </Link>
+                ) : isComplete ? (
+                  <Link href={`/certificate/${id}`}>
+                    <Button className="w-full h-11 gap-2">
+                      <Award className="h-4 w-4" />
+                      Claim Certificate
+                    </Button>
+                  </Link>
+                ) : (
+                  <StartButton modules={course.modules} completionPercent={course.completionPercent ?? 0} />
+                )}
                 {course.prerequisites.length > 0 && (
                   <div>
                     <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Prerequisites</div>

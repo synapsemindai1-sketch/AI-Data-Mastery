@@ -30,6 +30,8 @@ import type {
   ErrorEnvelope,
   HandleBrowserLoginCallbackParams,
   HealthStatus,
+  IssueCertificate400,
+  IssueCertificateInput,
   Lesson,
   LessonProgress,
   LogoutSuccess,
@@ -1042,6 +1044,77 @@ export function useGetCertificates<TData = Awaited<ReturnType<typeof getCertific
 
 
 
+
+export const getIssueCertificateUrl = () => {
+
+
+
+
+  return `/api/certificates`
+}
+
+/**
+ * @summary Issue a certificate for a completed course
+ */
+export const issueCertificate = async (issueCertificateInput: IssueCertificateInput, options?: RequestInit): Promise<Certificate> => {
+
+  return customFetch<Certificate>(getIssueCertificateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      issueCertificateInput,)
+  }
+);}
+
+
+
+
+export const getIssueCertificateMutationOptions = <TError = ErrorType<IssueCertificate400>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof issueCertificate>>, TError,{data: BodyType<IssueCertificateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof issueCertificate>>, TError,{data: BodyType<IssueCertificateInput>}, TContext> => {
+
+const mutationKey = ['issueCertificate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof issueCertificate>>, {data: BodyType<IssueCertificateInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  issueCertificate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type IssueCertificateMutationResult = NonNullable<Awaited<ReturnType<typeof issueCertificate>>>
+    export type IssueCertificateMutationBody = BodyType<IssueCertificateInput>
+    export type IssueCertificateMutationError = ErrorType<IssueCertificate400>
+
+    /**
+ * @summary Issue a certificate for a completed course
+ */
+export const useIssueCertificate = <TError = ErrorType<IssueCertificate400>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof issueCertificate>>, TError,{data: BodyType<IssueCertificateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof issueCertificate>>,
+        TError,
+        {data: BodyType<IssueCertificateInput>},
+        TContext
+      > => {
+      return useMutation(getIssueCertificateMutationOptions(options));
+    }
 
 export const getGetCurrentAuthUserUrl = () => {
 

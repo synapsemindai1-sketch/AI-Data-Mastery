@@ -265,6 +265,22 @@ export const GetCertificatesResponse = zod.array(GetCertificatesResponseItem)
 
 
 /**
+ * @summary Issue a certificate for a completed course
+ */
+export const IssueCertificateBody = zod.object({
+  "courseId": zod.number()
+})
+
+export const IssueCertificateResponse = zod.object({
+  "id": zod.number(),
+  "courseId": zod.number(),
+  "courseTitle": zod.string(),
+  "issuedAt": zod.string(),
+  "instructor": zod.string()
+})
+
+
+/**
  * @summary Get the currently authenticated user
  */
 export const GetCurrentAuthUserHeader = zod.object({

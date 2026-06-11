@@ -250,6 +250,33 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Certificate"
+    post:
+      operationId: issueCertificate
+      tags: [dashboard]
+      summary: Issue a certificate for a completed course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IssueCertificateInput"
+      responses:
+        "200":
+          description: Certificate issued or already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Certificate"
+        "400":
+          description: Course not fully completed yet
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message:
+                    type: string
 
   /auth/user:
     get:
@@ -703,6 +730,13 @@ components:
                 type: string
               completedAt:
                 type: string
+
+    IssueCertificateInput:
+      type: object
+      required: [courseId]
+      properties:
+        courseId:
+          type: integer
 
     Certificate:
       type: object

@@ -203,6 +203,10 @@ export interface DashboardSummary {
   recentLessons: DashboardSummaryRecentLessonsItem[];
 }
 
+export interface IssueCertificateInput {
+  courseId: number;
+}
+
 export interface Certificate {
   id: number;
   courseId: number;
@@ -257,6 +261,10 @@ export interface ErrorEnvelope {
  * Opaque session token — `Bearer <sid>`.
  */
 export type AuthorizationSessionHeaderParameter = string;
+
+export type IssueCertificate400 = {
+  message: string;
+};
 
 export type BeginBrowserLoginParams = {
 /**

@@ -21,6 +21,8 @@ export * from './dashboardSummaryWeeklyProgressItem';
 export * from './errorEnvelope';
 export * from './handleBrowserLoginCallbackParams';
 export * from './healthStatus';
+export * from './issueCertificate400';
+export * from './issueCertificateInput';
 export * from './lesson';
 export * from './lessonProgress';
 export * from './lessonSummary';

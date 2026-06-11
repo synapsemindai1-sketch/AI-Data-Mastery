@@ -1,9 +1,11 @@
 import { Router, type IRouter } from "express";
-import { eq, isNull } from "drizzle-orm";
+import { eq, isNull, and } from "drizzle-orm";
 import { db, lessonProgressTable, lessonsTable, modulesTable, coursesTable, quizAttemptsTable, certificatesTable } from "@workspace/db";
 import {
   GetDashboardSummaryResponse,
   GetCertificatesResponse,
+  IssueCertificateBody,
+  IssueCertificateResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -101,6 +103,75 @@ router.get("/certificates", async (req, res): Promise<void> => {
   });
 
   res.json(GetCertificatesResponse.parse(result));
+});
+
+router.post("/certificates", async (req, res): Promise<void> => {
+  const parsed = IssueCertificateBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid request body" });
+    return;
+  }
+  const { courseId } = parsed.data;
+  const userId = req.isAuthenticated() ? req.user.id : null;
+
+  // Check if certificate already exists
+  const existingFilter = userId
+    ? and(eq(certificatesTable.courseId, courseId), eq(certificatesTable.userId, userId))
+    : and(eq(certificatesTable.courseId, courseId), isNull(certificatesTable.userId));
+  const existing = await db.select().from(certificatesTable).where(existingFilter);
+  if (existing.length > 0) {
+    const course = await db.select().from(coursesTable).where(eq(coursesTable.id, courseId));
+    res.json(IssueCertificateResponse.parse({
+      id: existing[0].id,
+      courseId: existing[0].courseId,
+      courseTitle: course[0]?.title ?? "Unknown Course",
+      issuedAt: existing[0].issuedAt.toISOString(),
+      instructor: course[0]?.instructor ?? "Unknown Instructor",
+    }));
+    return;
+  }
+
+  // Verify all lessons in the course are completed
+  const modules = await db.select().from(modulesTable).where(eq(modulesTable.courseId, courseId));
+  const moduleIds = modules.map((m) => m.id);
+  const allLessons = await db.select().from(lessonsTable);
+  const courseLessons = allLessons.filter((l) => moduleIds.includes(l.moduleId));
+
+  if (courseLessons.length === 0) {
+    res.status(400).json({ message: "Course has no lessons" });
+    return;
+  }
+
+  const progressFilter = userId
+    ? eq(lessonProgressTable.userId, userId)
+    : isNull(lessonProgressTable.userId);
+  const allProgress = await db.select().from(lessonProgressTable).where(progressFilter);
+  const completedIds = new Set(allProgress.filter((p) => p.completed).map((p) => p.lessonId));
+  const allComplete = courseLessons.every((l) => completedIds.has(l.id));
+
+  if (!allComplete) {
+    res.status(400).json({ message: "Not all lessons are completed" });
+    return;
+  }
+
+  const [course] = await db.select().from(coursesTable).where(eq(coursesTable.id, courseId));
+  if (!course) {
+    res.status(400).json({ message: "Course not found" });
+    return;
+  }
+
+  const [cert] = await db
+    .insert(certificatesTable)
+    .values({ userId, courseId, issuedAt: new Date() })
+    .returning();
+
+  res.json(IssueCertificateResponse.parse({
+    id: cert.id,
+    courseId: cert.courseId,
+    courseTitle: course.title,
+    issuedAt: cert.issuedAt.toISOString(),
+    instructor: course.instructor,
+  }));
 });
 
 export default router;

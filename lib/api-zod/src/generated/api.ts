@@ -143,7 +143,8 @@ export const GetLessonQuizResponse = zod.object({
   "questions": zod.array(zod.object({
   "id": zod.number(),
   "question": zod.string(),
-  "options": zod.array(zod.string())
+  "options": zod.array(zod.string()),
+  "explanation": zod.string().nullish()
 }))
 })
 
@@ -192,7 +193,14 @@ export const SubmitQuizAttemptResponse = zod.object({
   "totalQuestions": zod.number(),
   "correctAnswers": zod.number(),
   "passed": zod.boolean(),
-  "completedAt": zod.string()
+  "completedAt": zod.string(),
+  "questionResults": zod.array(zod.object({
+  "questionId": zod.number(),
+  "selectedOption": zod.number(),
+  "correctOption": zod.number(),
+  "correct": zod.boolean(),
+  "explanation": zod.string().nullish()
+})).optional()
 })
 
 
@@ -210,7 +218,14 @@ export const GetQuizAttemptsResponseItem = zod.object({
   "totalQuestions": zod.number(),
   "correctAnswers": zod.number(),
   "passed": zod.boolean(),
-  "completedAt": zod.string()
+  "completedAt": zod.string(),
+  "questionResults": zod.array(zod.object({
+  "questionId": zod.number(),
+  "selectedOption": zod.number(),
+  "correctOption": zod.number(),
+  "correct": zod.boolean(),
+  "explanation": zod.string().nullish()
+})).optional()
 })
 export const GetQuizAttemptsResponse = zod.array(GetQuizAttemptsResponseItem)
 

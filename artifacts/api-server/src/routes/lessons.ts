@@ -99,6 +99,7 @@ router.get("/lessons/:id/quiz", async (req, res): Promise<void> => {
         id: q.id,
         question: q.question,
         options: q.options,
+        explanation: q.explanation ?? null,
       })),
     })
   );
@@ -177,12 +178,19 @@ router.post("/quiz-attempts", async (req, res): Promise<void> => {
     .where(eq(quizQuestionsTable.quizId, quizId));
 
   let correctAnswers = 0;
-  for (const answer of answers) {
-    const question = questions.find((q) => q.id === answer.questionId);
-    if (question && question.correctOption === answer.selectedOption) {
-      correctAnswers++;
-    }
-  }
+  const questionResults = questions.map((question) => {
+    const answer = answers.find((a) => a.questionId === question.id);
+    const selectedOption = answer?.selectedOption ?? -1;
+    const correct = question.correctOption === selectedOption;
+    if (correct) correctAnswers++;
+    return {
+      questionId: question.id,
+      selectedOption,
+      correctOption: question.correctOption,
+      correct,
+      explanation: question.explanation ?? null,
+    };
+  });
 
   const total = questions.length;
   const score = total > 0 ? Math.round((correctAnswers / total) * 100) : 0;
@@ -202,6 +210,7 @@ router.post("/quiz-attempts", async (req, res): Promise<void> => {
       correctAnswers: attempt.correctAnswers,
       passed: attempt.passed,
       completedAt: attempt.completedAt.toISOString(),
+      questionResults,
     })
   );
 });

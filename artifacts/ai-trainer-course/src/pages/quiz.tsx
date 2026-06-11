@@ -15,6 +15,13 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Answer = { questionId: number; selectedOption: number };
+type QuestionResult = {
+  questionId: number;
+  selectedOption: number;
+  correctOption: number;
+  correct: boolean;
+  explanation?: string | null;
+};
 
 export default function Quiz({ lessonId }: { lessonId: number }) {
   const queryClient = useQueryClient();
@@ -25,7 +32,13 @@ export default function Quiz({ lessonId }: { lessonId: number }) {
 
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [submitted, setSubmitted] = useState(false);
-  const [result, setResult] = useState<{ score: number; correctAnswers: number; totalQuestions: number; passed: boolean } | null>(null);
+  const [result, setResult] = useState<{
+    score: number;
+    correctAnswers: number;
+    totalQuestions: number;
+    passed: boolean;
+    questionResults?: QuestionResult[];
+  } | null>(null);
 
   const lastAttempt = previousAttempts?.[previousAttempts.length - 1];
 
@@ -47,7 +60,7 @@ export default function Quiz({ lessonId }: { lessonId: number }) {
     const res = await submitAttempt.mutateAsync({
       data: { quizId: quiz.id, answers },
     });
-    setResult(res);
+    setResult(res as typeof result);
     setSubmitted(true);
     queryClient.invalidateQueries({ queryKey: getGetQuizAttemptsQueryKey(lessonId) });
     if (res.passed) {
@@ -97,40 +110,88 @@ export default function Quiz({ lessonId }: { lessonId: number }) {
   }
 
   if (submitted && result) {
+    const qResults = result.questionResults ?? [];
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8">
-        <div className="w-full max-w-lg text-center">
-          <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${result.passed ? "bg-primary/10" : "bg-destructive/10"}`}>
-            {result.passed
-              ? <Trophy className="h-12 w-12 text-primary" />
-              : <XCircle className="h-12 w-12 text-destructive" />
-            }
+      <div className="flex-1 flex flex-col">
+        <div className="flex-1 max-w-3xl mx-auto w-full px-6 py-8">
+          {/* Score header */}
+          <div className="text-center mb-10">
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 ${result.passed ? "bg-primary/10" : "bg-destructive/10"}`}>
+              {result.passed
+                ? <Trophy className="h-10 w-10 text-primary" />
+                : <XCircle className="h-10 w-10 text-destructive" />
+              }
+            </div>
+            <h2 className="text-2xl font-bold font-display mb-2">
+              {result.passed ? "Quiz Passed!" : "Not Quite Yet"}
+            </h2>
+            <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+              {result.passed
+                ? "Great work. This lesson is now marked complete."
+                : `You need 70% to pass. You scored ${result.score}% — review the explanations below and try again.`
+              }
+            </p>
+            <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto mb-8">
+              <div className="bg-card border rounded-xl p-3 text-center">
+                <div className="text-2xl font-bold font-display mb-0.5">{result.score}%</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider">Score</div>
+              </div>
+              <div className="bg-card border rounded-xl p-3 text-center">
+                <div className="text-2xl font-bold font-display text-primary mb-0.5">{result.correctAnswers}</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider">Correct</div>
+              </div>
+              <div className="bg-card border rounded-xl p-3 text-center">
+                <div className="text-2xl font-bold font-display mb-0.5">{result.totalQuestions}</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider">Total</div>
+              </div>
+            </div>
           </div>
 
-          <h2 className="text-3xl font-bold font-display mb-2">
-            {result.passed ? "Quiz Passed!" : "Not Quite Yet"}
-          </h2>
-          <p className="text-muted-foreground mb-8">
-            {result.passed
-              ? "Great work. This lesson is now marked complete."
-              : `You need 70% to pass. You scored ${result.score}% — review the material and try again.`
-            }
-          </p>
-
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            <div className="bg-card border rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold font-display mb-1">{result.score}%</div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wider">Score</div>
+          {/* Answer review */}
+          {qResults.length > 0 && (
+            <div className="space-y-6 mb-8">
+              <h3 className="text-lg font-semibold font-display">Answer Review</h3>
+              {quiz.questions.map((q, qIdx) => {
+                const qr = qResults.find((r) => r.questionId === q.id);
+                if (!qr) return null;
+                return (
+                  <div key={q.id} className={`rounded-2xl border p-5 ${qr.correct ? "border-primary/30 bg-primary/5" : "border-destructive/30 bg-destructive/5"}`}>
+                    <div className="flex items-start gap-3 mb-4">
+                      <span className={`shrink-0 w-7 h-7 rounded-full text-sm font-bold flex items-center justify-center ${qr.correct ? "bg-primary/15 text-primary" : "bg-destructive/15 text-destructive"}`}>
+                        {qIdx + 1}
+                      </span>
+                      <p className="font-medium text-base leading-relaxed">{q.question}</p>
+                    </div>
+                    <div className="space-y-2 ml-10">
+                      {q.options.map((option, optIdx) => {
+                        const isSelected = qr.selectedOption === optIdx;
+                        const isCorrect = qr.correctOption === optIdx;
+                        let cls = "w-full text-left px-4 py-2.5 rounded-xl border text-sm flex items-center gap-3 ";
+                        if (isCorrect) cls += "border-primary/50 bg-primary/10 text-primary font-medium";
+                        else if (isSelected && !isCorrect) cls += "border-destructive/50 bg-destructive/10 text-destructive";
+                        else cls += "border-border/40 text-muted-foreground";
+                        return (
+                          <div key={optIdx} className={cls}>
+                            <span className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center text-xs font-bold ${isCorrect ? "bg-primary border-primary text-primary-foreground" : isSelected ? "bg-destructive border-destructive text-destructive-foreground" : "border-border/40"}`}>
+                              {isCorrect ? "✓" : isSelected ? "✗" : ""}
+                            </span>
+                            {option}
+                            {isCorrect && <span className="ml-auto text-xs font-normal opacity-60">Correct answer</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {qr.explanation && (
+                      <div className="mt-4 ml-10 bg-background/60 border border-border/40 rounded-xl px-4 py-3">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Explanation</span>
+                        <p className="text-sm text-foreground/80 leading-relaxed">{qr.explanation}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            <div className="bg-card border rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold font-display text-primary mb-1">{result.correctAnswers}</div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wider">Correct</div>
-            </div>
-            <div className="bg-card border rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold font-display mb-1">{result.totalQuestions}</div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wider">Total</div>
-            </div>
-          </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             {!result.passed && (

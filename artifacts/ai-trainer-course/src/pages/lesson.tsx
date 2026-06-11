@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 function LessonTypeBadge({ type }: { type: string }) {
   const configs: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
@@ -101,13 +103,26 @@ export default function Lesson({ lessonId }: { lessonId: number }) {
           </div>
         )}
 
-        {/* Content */}
-        <div className="prose prose-slate max-w-none mb-10">
-          {lesson.content.split('\n').map((paragraph, i) => (
-            paragraph.trim() ? (
-              <p key={i} className="text-base leading-relaxed text-foreground/90 mb-4">{paragraph}</p>
-            ) : null
-          ))}
+        {/* Content — rich markdown with images */}
+        <div className="prose prose-slate dark:prose-invert max-w-none mb-10
+          prose-headings:font-bold prose-headings:font-display
+          prose-h1:text-2xl prose-h1:mt-8 prose-h1:mb-4
+          prose-h2:text-xl prose-h2:mt-7 prose-h2:mb-3
+          prose-h3:text-lg prose-h3:mt-5 prose-h3:mb-2
+          prose-p:text-base prose-p:leading-relaxed prose-p:text-foreground/90 prose-p:mb-4
+          prose-li:text-foreground/90 prose-li:leading-relaxed
+          prose-strong:text-foreground prose-strong:font-semibold
+          prose-blockquote:border-l-4 prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:rounded-r-lg prose-blockquote:py-1 prose-blockquote:not-italic
+          prose-blockquote:text-foreground/80
+          prose-code:bg-muted prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-code:font-mono prose-code:text-foreground
+          prose-pre:bg-muted prose-pre:rounded-xl prose-pre:p-4
+          prose-img:rounded-2xl prose-img:shadow-md prose-img:my-6 prose-img:w-full prose-img:object-cover
+          prose-a:text-primary prose-a:underline-offset-2
+          prose-table:text-sm prose-th:bg-muted/60 prose-th:font-semibold
+          prose-hr:border-border/50">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {lesson.content}
+          </ReactMarkdown>
         </div>
 
         {/* Quiz CTA */}

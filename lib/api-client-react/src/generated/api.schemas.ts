@@ -120,6 +120,8 @@ export interface QuizQuestion {
   id: number;
   question: string;
   options: string[];
+  /** @nullable */
+  explanation?: string | null;
 }
 
 export interface Quiz {
@@ -139,6 +141,15 @@ export interface QuizAttemptInput {
   answers: QuizAttemptInputAnswersItem[];
 }
 
+export interface QuizQuestionResult {
+  questionId: number;
+  selectedOption: number;
+  correctOption: number;
+  correct: boolean;
+  /** @nullable */
+  explanation?: string | null;
+}
+
 export interface QuizResult {
   id: number;
   quizId: number;
@@ -147,6 +158,7 @@ export interface QuizResult {
   correctAnswers: number;
   passed: boolean;
   completedAt: string;
+  questionResults?: QuizQuestionResult[];
 }
 
 export interface LessonProgress {

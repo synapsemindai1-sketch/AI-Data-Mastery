@@ -6,10 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface QuizQuestion {
-  id: number;
-  question: string;
-  options: string[];
+export interface QuizQuestionResult {
+  questionId: number;
+  selectedOption: number;
+  correctOption: number;
+  correct: boolean;
   /** @nullable */
   explanation?: string | null;
 }

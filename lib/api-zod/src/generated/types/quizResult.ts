@@ -5,6 +5,7 @@
  * AI Data Trainer Mastery Course Platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { QuizQuestionResult } from './quizQuestionResult';
 
 export interface QuizResult {
   id: number;
@@ -14,4 +15,5 @@ export interface QuizResult {
   correctAnswers: number;
   passed: boolean;
   completedAt: string;
+  questionResults?: QuizQuestionResult[];
 }

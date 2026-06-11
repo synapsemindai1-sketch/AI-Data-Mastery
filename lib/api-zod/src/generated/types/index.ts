@@ -36,4 +36,5 @@ export * from './quiz';
 export * from './quizAttemptInput';
 export * from './quizAttemptInputAnswersItem';
 export * from './quizQuestion';
+export * from './quizQuestionResult';
 export * from './quizResult';

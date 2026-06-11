@@ -54,6 +54,7 @@ export const quizQuestionsTable = pgTable("quiz_questions", {
   question: text("question").notNull(),
   options: text("options").array().notNull(),
   correctOption: integer("correct_option").notNull(),
+  explanation: text("explanation"),
   order: integer("order").notNull(),
 });
 

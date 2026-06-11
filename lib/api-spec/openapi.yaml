@@ -570,6 +570,8 @@ components:
           type: array
           items:
             type: string
+        explanation:
+          type: ["string", "null"]
 
     QuizAttemptInput:
       type: object
@@ -587,6 +589,21 @@ components:
                 type: integer
               selectedOption:
                 type: integer
+
+    QuizQuestionResult:
+      type: object
+      required: [questionId, selectedOption, correctOption, correct]
+      properties:
+        questionId:
+          type: integer
+        selectedOption:
+          type: integer
+        correctOption:
+          type: integer
+        correct:
+          type: boolean
+        explanation:
+          type: ["string", "null"]
 
     QuizResult:
       type: object
@@ -606,6 +623,10 @@ components:
           type: boolean
         completedAt:
           type: string
+        questionResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuizQuestionResult"
 
     LessonProgress:
       type: object

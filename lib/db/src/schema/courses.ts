@@ -59,6 +59,7 @@ export const quizQuestionsTable = pgTable("quiz_questions", {
 
 export const lessonProgressTable = pgTable("lesson_progress", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   lessonId: integer("lesson_id").notNull().references(() => lessonsTable.id),
   completed: boolean("completed").notNull().default(false),
   lastAccessedAt: timestamp("last_accessed_at", { withTimezone: true }).notNull().defaultNow(),
@@ -66,6 +67,7 @@ export const lessonProgressTable = pgTable("lesson_progress", {
 
 export const quizAttemptsTable = pgTable("quiz_attempts", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   quizId: integer("quiz_id").notNull().references(() => quizzesTable.id),
   score: real("score").notNull(),
   totalQuestions: integer("total_questions").notNull(),
@@ -76,6 +78,7 @@ export const quizAttemptsTable = pgTable("quiz_attempts", {
 
 export const certificatesTable = pgTable("certificates", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   courseId: integer("course_id").notNull().references(() => coursesTable.id),
   issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().defaultNow(),
 });

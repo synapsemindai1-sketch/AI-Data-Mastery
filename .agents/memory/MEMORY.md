@@ -1,0 +1,1 @@
+- [Replit Auth setup](replit-auth-setup.md) — auth fully integrated; sessions+users tables in DB, progress/quiz/certs scoped by nullable user_id for backward compat

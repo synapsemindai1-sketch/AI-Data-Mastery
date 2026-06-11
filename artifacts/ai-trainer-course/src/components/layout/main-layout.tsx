@@ -1,9 +1,11 @@
 import { Link, useLocation } from "wouter";
-import { BookOpen, LayoutDashboard, Search, User } from "lucide-react";
+import { BookOpen, LayoutDashboard, Search, LogIn, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@workspace/replit-auth-web";
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { user, isLoading, isAuthenticated, login, logout } = useAuth();
 
   return (
     <div className="min-h-[100dvh] flex flex-col">
@@ -33,7 +35,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </nav>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="text-muted-foreground">
               <Search className="h-5 w-5" />
               <span className="sr-only">Search</span>
@@ -44,9 +46,32 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 Dashboard
               </Button>
             </Link>
-            <Button size="icon" className="rounded-full">
-              <User className="h-5 w-5" />
-            </Button>
+            {!isLoading && (
+              isAuthenticated ? (
+                <div className="flex items-center gap-2">
+                  {user?.profileImageUrl ? (
+                    <img
+                      src={user.profileImageUrl}
+                      alt={user.firstName ?? "User"}
+                      className="h-8 w-8 rounded-full object-cover border border-border"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                      {(user?.firstName?.[0] ?? user?.email?.[0] ?? "U").toUpperCase()}
+                    </div>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={logout} className="text-muted-foreground hidden sm:flex">
+                    <LogOut className="mr-1.5 h-4 w-4" />
+                    Log out
+                  </Button>
+                </div>
+              ) : (
+                <Button size="sm" onClick={login}>
+                  <LogIn className="mr-1.5 h-4 w-4" />
+                  Log in
+                </Button>
+              )
+            )}
           </div>
         </div>
       </header>

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
-import { db, lessonProgressTable, lessonsTable, modulesTable, coursesTable, quizAttemptsTable, quizzesTable, certificatesTable } from "@workspace/db";
+import { eq, isNull } from "drizzle-orm";
+import { db, lessonProgressTable, lessonsTable, modulesTable, coursesTable, quizAttemptsTable, certificatesTable } from "@workspace/db";
 import {
   GetDashboardSummaryResponse,
   GetCertificatesResponse,
@@ -8,8 +8,13 @@ import {
 
 const router: IRouter = Router();
 
-router.get("/dashboard/summary", async (_req, res): Promise<void> => {
-  const allProgress = await db.select().from(lessonProgressTable);
+router.get("/dashboard/summary", async (req, res): Promise<void> => {
+  const userId = req.isAuthenticated() ? req.user.id : null;
+  const progressFilter = userId
+    ? eq(lessonProgressTable.userId, userId)
+    : isNull(lessonProgressTable.userId);
+
+  const allProgress = await db.select().from(lessonProgressTable).where(progressFilter);
   const completedProgress = allProgress.filter((p) => p.completed);
 
   const totalLessonsCompleted = completedProgress.length;
@@ -75,8 +80,13 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
   );
 });
 
-router.get("/certificates", async (_req, res): Promise<void> => {
-  const certs = await db.select().from(certificatesTable);
+router.get("/certificates", async (req, res): Promise<void> => {
+  const userId = req.isAuthenticated() ? req.user.id : null;
+  const certsFilter = userId
+    ? eq(certificatesTable.userId, userId)
+    : isNull(certificatesTable.userId);
+
+  const certs = await db.select().from(certificatesTable).where(certsFilter);
   const courses = await db.select().from(coursesTable);
 
   const result = certs.map((cert) => {

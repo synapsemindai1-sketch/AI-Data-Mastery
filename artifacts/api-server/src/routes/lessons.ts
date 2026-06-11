@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq, asc } from "drizzle-orm";
-import { db, lessonsTable, lessonProgressTable, quizzesTable, quizQuestionsTable, quizAttemptsTable, modulesTable } from "@workspace/db";
+import { eq, asc, and, isNull } from "drizzle-orm";
+import { db, lessonsTable, lessonProgressTable, quizzesTable, quizQuestionsTable, quizAttemptsTable } from "@workspace/db";
 import {
   GetLessonParams,
   GetLessonResponse,
@@ -31,10 +31,12 @@ router.get("/lessons/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [progress] = await db
-    .select()
-    .from(lessonProgressTable)
-    .where(eq(lessonProgressTable.lessonId, lesson.id));
+  const userId = req.isAuthenticated() ? req.user.id : null;
+  const progressFilter = userId
+    ? and(eq(lessonProgressTable.lessonId, lesson.id), eq(lessonProgressTable.userId, userId))
+    : and(eq(lessonProgressTable.lessonId, lesson.id), isNull(lessonProgressTable.userId));
+
+  const [progress] = await db.select().from(lessonProgressTable).where(progressFilter);
 
   const siblingsRaw = await db
     .select()
@@ -102,8 +104,13 @@ router.get("/lessons/:id/quiz", async (req, res): Promise<void> => {
   );
 });
 
-router.get("/progress", async (_req, res): Promise<void> => {
-  const progress = await db.select().from(lessonProgressTable);
+router.get("/progress", async (req, res): Promise<void> => {
+  const userId = req.isAuthenticated() ? req.user.id : null;
+  const progressFilter = userId
+    ? eq(lessonProgressTable.userId, userId)
+    : isNull(lessonProgressTable.userId);
+
+  const progress = await db.select().from(lessonProgressTable).where(progressFilter);
   res.json(
     GetProgressResponse.parse(
       progress.map((p) => ({
@@ -123,23 +130,25 @@ router.post("/progress", async (req, res): Promise<void> => {
   }
 
   const { lessonId, completed } = parsed.data;
+  const userId = req.isAuthenticated() ? req.user.id : null;
 
-  const [existing] = await db
-    .select()
-    .from(lessonProgressTable)
-    .where(eq(lessonProgressTable.lessonId, lessonId));
+  const progressFilter = userId
+    ? and(eq(lessonProgressTable.lessonId, lessonId), eq(lessonProgressTable.userId, userId))
+    : and(eq(lessonProgressTable.lessonId, lessonId), isNull(lessonProgressTable.userId));
+
+  const [existing] = await db.select().from(lessonProgressTable).where(progressFilter);
 
   let result;
   if (existing) {
     [result] = await db
       .update(lessonProgressTable)
       .set({ completed, lastAccessedAt: new Date() })
-      .where(eq(lessonProgressTable.lessonId, lessonId))
+      .where(eq(lessonProgressTable.id, existing.id))
       .returning();
   } else {
     [result] = await db
       .insert(lessonProgressTable)
-      .values({ lessonId, completed, lastAccessedAt: new Date() })
+      .values({ userId, lessonId, completed, lastAccessedAt: new Date() })
       .returning();
   }
 
@@ -160,6 +169,7 @@ router.post("/quiz-attempts", async (req, res): Promise<void> => {
   }
 
   const { quizId, answers } = parsed.data;
+  const userId = req.isAuthenticated() ? req.user.id : null;
 
   const questions = await db
     .select()
@@ -180,7 +190,7 @@ router.post("/quiz-attempts", async (req, res): Promise<void> => {
 
   const [attempt] = await db
     .insert(quizAttemptsTable)
-    .values({ quizId, score, totalQuestions: total, correctAnswers, passed })
+    .values({ userId, quizId, score, totalQuestions: total, correctAnswers, passed })
     .returning();
 
   res.json(
@@ -214,10 +224,12 @@ router.get("/quiz-attempts/lesson/:lessonId", async (req, res): Promise<void> =>
     return;
   }
 
-  const attempts = await db
-    .select()
-    .from(quizAttemptsTable)
-    .where(eq(quizAttemptsTable.quizId, quiz.id));
+  const userId = req.isAuthenticated() ? req.user.id : null;
+  const attemptsFilter = userId
+    ? and(eq(quizAttemptsTable.quizId, quiz.id), eq(quizAttemptsTable.userId, userId))
+    : and(eq(quizAttemptsTable.quizId, quiz.id), isNull(quizAttemptsTable.userId));
+
+  const attempts = await db.select().from(quizAttemptsTable).where(attemptsFilter);
 
   res.json(
     GetQuizAttemptsResponse.parse(

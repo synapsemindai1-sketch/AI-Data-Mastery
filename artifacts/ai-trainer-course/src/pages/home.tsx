@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useListCourses } from "@workspace/api-client-react";
 import { Search, Clock, Users, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -21,14 +21,14 @@ const SORT_OPTIONS = [
   { label: "Most Popular", value: "popular" },
 ];
 
-// Display order matches the screenshot: Red Teaming, Content Mod, Model Eval, Quality Checks, AI Trainer Output, Advanced Mastery
-const DISPLAY_ORDER = [4, 5, 6, 1, 2, 3];
+const DISPLAY_ORDER = [4, 5, 6, 1, 2, 3, 7];
 
 type CourseConfig = {
   price: number;
   gradient: string;
   titleColor: string;
   enroll?: boolean;
+  featured?: boolean;
 };
 
 const COURSE_CONFIG: Record<number, CourseConfig> = {
@@ -63,6 +63,12 @@ const COURSE_CONFIG: Record<number, CourseConfig> = {
     titleColor: "text-white",
     enroll: true,
   },
+  7: {
+    price: 49,
+    gradient: "from-violet-950 via-purple-900 to-indigo-950",
+    titleColor: "text-violet-200",
+    featured: true,
+  },
 };
 
 type Course = {
@@ -74,65 +80,77 @@ type Course = {
   totalLessons: number;
   category: string;
   thumbnail: string;
-  completionPercent: number | null;
+  completionPercent?: number | null;
 };
 
 function CourseCard({ course }: { course: Course }) {
+  const [, navigate] = useLocation();
   const cfg = COURSE_CONFIG[course.id] ?? { price: 29, gradient: "from-slate-900 to-blue-950", titleColor: "text-white" };
 
+  const handleCardClick = () => {
+    navigate(`/courses/${course.id}`);
+  };
+
   return (
-    <Link href={`/courses/${course.id}`}>
-      <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer">
-        {/* Thumbnail */}
-        <div className={`relative h-[140px] bg-gradient-to-br ${cfg.gradient} flex flex-col justify-between p-4 overflow-hidden`}>
-          {/* Subtle texture overlay */}
-          <div className="absolute inset-0 opacity-[0.07]" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
+    <div
+      onClick={handleCardClick}
+      className="group bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
+    >
+      {/* Thumbnail */}
+      <div className={`relative h-[140px] bg-gradient-to-br ${cfg.gradient} flex flex-col justify-between p-4 overflow-hidden`}>
+        {/* Subtle texture overlay */}
+        <div className="absolute inset-0 opacity-[0.07]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+        {cfg.featured && (
+          <div className="relative z-10 flex justify-between items-start">
+            <span className="text-white/50 text-[10px] font-semibold uppercase tracking-widest">{course.category}</span>
+            <span className="bg-violet-500/80 text-white text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded">Featured</span>
+          </div>
+        )}
+        {!cfg.featured && (
           <div className="relative z-10">
             <span className="text-white/50 text-[10px] font-semibold uppercase tracking-widest">{course.category}</span>
           </div>
-          <div className="relative z-10">
-            <h3 className={`font-bold text-sm leading-snug line-clamp-2 ${cfg.titleColor}`}>{course.title}</h3>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="p-3">
-          <p className="text-[11px] text-gray-500 line-clamp-2 mb-2.5 leading-relaxed">{course.description}</p>
-
-          <div className="flex items-center gap-3 text-[11px] text-gray-400 mb-3">
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {course.durationHours}+ hrs
-            </span>
-            <span className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              {course.totalLessons} lessons
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="font-bold text-gray-900 text-[13px]">${cfg.price}.00<span className="text-gray-400 font-normal text-[11px]">/month</span></span>
-            {cfg.enroll ? (
-              <button
-                onClick={(e) => e.preventDefault()}
-                className="text-[11px] font-semibold bg-blue-600 text-white rounded px-3 py-1 hover:bg-blue-700 transition-colors"
-              >
-                Enroll Now
-              </button>
-            ) : (
-              <button
-                onClick={(e) => e.preventDefault()}
-                className="text-[11px] font-semibold text-blue-600 border border-blue-600 rounded px-3 py-1 hover:bg-blue-600 hover:text-white transition-colors"
-              >
-                Buy Now
-              </button>
-            )}
-          </div>
+        )}
+        <div className="relative z-10">
+          <h3 className={`font-bold text-sm leading-snug line-clamp-2 ${cfg.titleColor}`}>{course.title}</h3>
         </div>
       </div>
-    </Link>
+
+      {/* Body */}
+      <div className="p-3">
+        <p className="text-[11px] text-gray-500 line-clamp-2 mb-2.5 leading-relaxed">{course.description}</p>
+
+        <div className="flex items-center gap-3 text-[11px] text-gray-400 mb-3">
+          <span className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {course.durationHours}+ hrs
+          </span>
+          <span className="flex items-center gap-1">
+            <Users className="h-3 w-3" />
+            {course.totalLessons} lessons
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="font-bold text-gray-900 text-[13px]">${cfg.price}.00<span className="text-gray-400 font-normal text-[11px]">/month</span></span>
+          {cfg.featured ? (
+            <span className="text-[11px] font-semibold bg-violet-600 text-white rounded px-3 py-1">
+              Start Mastery
+            </span>
+          ) : cfg.enroll ? (
+            <span className="text-[11px] font-semibold bg-blue-600 text-white rounded px-3 py-1">
+              Enroll Now
+            </span>
+          ) : (
+            <span className="text-[11px] font-semibold text-blue-600 border border-blue-600 rounded px-3 py-1">
+              View Course
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -161,7 +179,6 @@ export default function Home() {
   const displayCourses = useMemo(() => {
     if (!courses) return [];
 
-    // Sort by screenshot order first
     const ordered = [...courses].sort((a, b) => {
       const ai = DISPLAY_ORDER.indexOf(a.id);
       const bi = DISPLAY_ORDER.indexOf(b.id);
@@ -183,7 +200,6 @@ export default function Home() {
       list = list.filter((c) => selectedCategories.includes(c.category));
     }
     if (selectedLevels.length > 0) {
-      // map "Advance" → "Advanced"
       const normalised = selectedLevels.map((l) => (l === "Advance" ? "Advanced" : l));
       list = list.filter((c) => normalised.includes(c.level));
     }

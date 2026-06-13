@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { Link, useLocation } from "wouter";
-import { useGetCertificates, useIssueCertificate, useGetCourse, useGetProgress } from "@workspace/api-client-react";
+import { Link } from "wouter";
+import { useGetCertificates, useIssueCertificate, useGetCourse, useGetCourseStats } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
 import { Award, Download, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
@@ -13,6 +13,9 @@ function CertificateDisplay({
   issuedAt,
   certId,
   courseId,
+  category,
+  level,
+  durationHours,
 }: {
   courseTitle: string;
   instructor: string;
@@ -20,170 +23,213 @@ function CertificateDisplay({
   issuedAt: string;
   certId: number;
   courseId: number;
+  category?: string;
+  level?: string;
+  durationHours?: number;
 }) {
   const date = new Date(issuedAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-  const certCode = `TM-${new Date(issuedAt).getFullYear()}-${String(courseId).padStart(3, "0")}-${String(certId).padStart(4, "0")}`;
+  const certCode = `ADM-${new Date(issuedAt).getFullYear()}-${String(courseId).padStart(3, "0")}-${String(certId).padStart(4, "0")}`;
 
   return (
     <div
       style={{
         width: "900px",
-        height: "640px",
-        background: "linear-gradient(135deg, #0f1729 0%, #1a1f4e 40%, #0d2240 100%)",
+        height: "636px",
+        background: "#ffffff",
         position: "relative",
+        display: "flex",
+        fontFamily: "'Georgia', 'Times New Roman', serif",
+        overflow: "hidden",
+        boxShadow: "0 25px 60px rgba(0,0,0,0.18)",
+      }}
+    >
+      {/* Left accent stripe */}
+      <div style={{
+        width: "10px",
+        background: "linear-gradient(180deg, #6c47ff 0%, #4f35cc 50%, #2a1a8a 100%)",
+        flexShrink: 0,
+      }} />
+
+      {/* Main content */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "48px 56px 40px 52px", position: "relative" }}>
+
+        {/* Top: logo + cert label row */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "32px" }}>
+          {/* Logo */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <rect width="36" height="36" rx="8" fill="#6c47ff" />
+              <path d="M10 18 L18 10 L26 18 L18 26 Z" fill="white" opacity="0.9" />
+              <circle cx="18" cy="18" r="4" fill="white" />
+            </svg>
+            <div>
+              <div style={{ fontSize: "15px", fontWeight: 700, color: "#1a1a2e", fontFamily: "system-ui, -apple-system, sans-serif", letterSpacing: "-0.3px" }}>
+                AI Data Mastery
+              </div>
+              <div style={{ fontSize: "10px", color: "#6c47ff", fontFamily: "system-ui, sans-serif", letterSpacing: "2px", textTransform: "uppercase", fontWeight: 600 }}>
+                Professional Training
+              </div>
+            </div>
+          </div>
+
+          {/* Certificate label */}
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "10px", color: "#9ca3af", fontFamily: "system-ui, sans-serif", letterSpacing: "3px", textTransform: "uppercase", marginBottom: "2px" }}>
+              Certificate No.
+            </div>
+            <div style={{ fontSize: "11px", color: "#374151", fontFamily: "'Courier New', monospace", fontWeight: 600, letterSpacing: "1px" }}>
+              {certCode}
+            </div>
+          </div>
+        </div>
+
+        {/* Thin divider */}
+        <div style={{ height: "1px", background: "linear-gradient(90deg, #6c47ff 0%, #e5e7eb 60%, transparent 100%)", marginBottom: "32px" }} />
+
+        {/* Main body */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          {/* "Certificate of Completion" */}
+          <div style={{ fontSize: "11px", color: "#6c47ff", fontFamily: "system-ui, sans-serif", letterSpacing: "4px", textTransform: "uppercase", fontWeight: 700, marginBottom: "16px" }}>
+            Certificate of Completion
+          </div>
+
+          {/* "This is to certify that" */}
+          <div style={{ fontSize: "14px", color: "#6b7280", fontStyle: "italic", marginBottom: "10px", fontFamily: "Georgia, serif" }}>
+            This is to certify that
+          </div>
+
+          {/* Recipient name */}
+          <div style={{
+            fontSize: "44px",
+            fontWeight: "bold",
+            color: "#111827",
+            fontFamily: "Georgia, 'Times New Roman', serif",
+            letterSpacing: "-0.5px",
+            lineHeight: 1.1,
+            marginBottom: "16px",
+            borderBottom: "3px solid #6c47ff",
+            paddingBottom: "14px",
+            maxWidth: "580px",
+          }}>
+            {recipientName}
+          </div>
+
+          {/* "has successfully completed" */}
+          <div style={{ fontSize: "14px", color: "#6b7280", fontStyle: "italic", marginBottom: "10px", fontFamily: "Georgia, serif" }}>
+            has successfully completed the course
+          </div>
+
+          {/* Course title */}
+          <div style={{
+            fontSize: "22px",
+            fontWeight: "bold",
+            color: "#1a1a2e",
+            fontFamily: "Georgia, serif",
+            lineHeight: 1.3,
+            marginBottom: "6px",
+          }}>
+            {courseTitle}
+          </div>
+
+          {/* Instructor + meta row */}
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "4px" }}>
+            <span style={{ fontSize: "12px", color: "#6b7280", fontFamily: "system-ui, sans-serif" }}>
+              Instructed by <span style={{ color: "#374151", fontWeight: 600 }}>{instructor}</span>
+            </span>
+            {level && (
+              <>
+                <span style={{ width: "3px", height: "3px", borderRadius: "50%", background: "#d1d5db", display: "inline-block" }} />
+                <span style={{ fontSize: "12px", color: "#6b7280", fontFamily: "system-ui, sans-serif" }}>{level}</span>
+              </>
+            )}
+            {durationHours && (
+              <>
+                <span style={{ width: "3px", height: "3px", borderRadius: "50%", background: "#d1d5db", display: "inline-block" }} />
+                <span style={{ fontSize: "12px", color: "#6b7280", fontFamily: "system-ui, sans-serif" }}>{durationHours}h of learning</span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom row */}
+        <div style={{ marginTop: "28px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          {/* Date */}
+          <div>
+            <div style={{ height: "1px", width: "160px", background: "#d1d5db", marginBottom: "8px" }} />
+            <div style={{ fontSize: "13px", fontWeight: 600, color: "#374151", fontFamily: "Georgia, serif", marginBottom: "2px" }}>
+              {date}
+            </div>
+            <div style={{ fontSize: "10px", color: "#9ca3af", fontFamily: "system-ui, sans-serif", letterSpacing: "2px", textTransform: "uppercase" }}>
+              Date Issued
+            </div>
+          </div>
+
+          {/* Seal */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="38" fill="none" stroke="#6c47ff" strokeWidth="1.5" opacity="0.2" />
+              <circle cx="40" cy="40" r="32" fill="none" stroke="#6c47ff" strokeWidth="1" opacity="0.3" />
+              <circle cx="40" cy="40" r="26" fill="#6c47ff" opacity="0.08" />
+              {/* Star */}
+              <path d="M40 20 L43.5 32 L56 32 L46 39.5 L49.5 52 L40 45 L30.5 52 L34 39.5 L24 32 L36.5 32 Z" fill="#6c47ff" opacity="0.7" />
+              <text x="40" y="68" textAnchor="middle" fontSize="7" fill="#6c47ff" fontFamily="system-ui" letterSpacing="1" opacity="0.8">VERIFIED</text>
+            </svg>
+          </div>
+
+          {/* Signature placeholder */}
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontFamily: "'Dancing Script', cursive, Georgia, serif", fontSize: "22px", color: "#374151", marginBottom: "4px", fontStyle: "italic" }}>
+              {instructor.split(" ").slice(0, 2).join(" ")}
+            </div>
+            <div style={{ height: "1px", width: "160px", background: "#d1d5db", marginBottom: "8px" }} />
+            <div style={{ fontSize: "10px", color: "#9ca3af", fontFamily: "system-ui, sans-serif", letterSpacing: "2px", textTransform: "uppercase" }}>
+              Instructor Signature
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right accent panel */}
+      <div style={{
+        width: "56px",
+        background: "linear-gradient(180deg, #6c47ff 0%, #4f35cc 60%, #2a1a8a 100%)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: "'Georgia', serif",
-        overflow: "hidden",
-      }}
-    >
-      {/* Corner ornaments */}
-      {[
-        { top: 0, left: 0, transform: "none" },
-        { top: 0, right: 0, transform: "scaleX(-1)" },
-        { bottom: 0, left: 0, transform: "scaleY(-1)" },
-        { bottom: 0, right: 0, transform: "scale(-1,-1)" },
-      ].map((style, i) => (
-        <svg
-          key={i}
-          width="120"
-          height="120"
-          viewBox="0 0 120 120"
-          style={{ position: "absolute", ...style }}
-        >
-          <path d="M0,0 L80,0 L80,8 L8,8 L8,80 L0,80 Z" fill="#d4a843" opacity="0.6" />
-          <path d="M0,0 L60,0 L60,4 L4,4 L4,60 L0,60 Z" fill="#f0c96b" opacity="0.4" />
-          <circle cx="20" cy="20" r="6" fill="none" stroke="#d4a843" strokeWidth="1.5" opacity="0.5" />
-          <circle cx="20" cy="20" r="3" fill="#d4a843" opacity="0.4" />
-        </svg>
-      ))}
-
-      {/* Outer border */}
-      <div
-        style={{
-          position: "absolute",
-          inset: "20px",
-          border: "1.5px solid rgba(212,168,67,0.35)",
-          borderRadius: "4px",
-          pointerEvents: "none",
-        }}
-      />
-      {/* Inner border */}
-      <div
-        style={{
-          position: "absolute",
-          inset: "28px",
-          border: "1px solid rgba(212,168,67,0.18)",
-          borderRadius: "2px",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Watermark circle */}
-      <div
-        style={{
-          position: "absolute",
-          width: "340px",
-          height: "340px",
-          borderRadius: "50%",
-          border: "1px solid rgba(212,168,67,0.06)",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Content */}
-      <div style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "0 80px", width: "100%" }}>
-        {/* Logo row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", marginBottom: "22px" }}>
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <circle cx="14" cy="14" r="13" stroke="#d4a843" strokeWidth="1.5" />
-            <path d="M8 14 L14 8 L20 14 L14 20 Z" stroke="#d4a843" strokeWidth="1.5" fill="none" />
-            <circle cx="14" cy="14" r="3" fill="#d4a843" />
-          </svg>
-          <span style={{ color: "#d4a843", fontSize: "13px", letterSpacing: "4px", fontFamily: "system-ui, sans-serif", fontWeight: 600 }}>
-            AI DATA MASTERY
-          </span>
-        </div>
-
-        {/* Main heading */}
-        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: "11px", letterSpacing: "5px", fontFamily: "system-ui, sans-serif", marginBottom: "8px", textTransform: "uppercase" }}>
-          Certificate of Completion
-        </div>
-
-        {/* Divider */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginBottom: "20px" }}>
-          <div style={{ width: "80px", height: "1px", background: "linear-gradient(to right, transparent, #d4a843)" }} />
-          <svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4" fill="none" stroke="#d4a843" strokeWidth="1" /><circle cx="6" cy="6" r="2" fill="#d4a843" /></svg>
-          <div style={{ width: "80px", height: "1px", background: "linear-gradient(to left, transparent, #d4a843)" }} />
-        </div>
-
-        {/* "This certifies that" */}
-        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "13px", fontStyle: "italic", marginBottom: "12px", fontFamily: "Georgia, serif" }}>
-          This certifies that
-        </div>
-
-        {/* Recipient name */}
+        gap: "8px",
+        flexShrink: 0,
+      }}>
+        {/* Vertical text */}
         <div style={{
-          color: "#ffffff",
-          fontSize: "38px",
-          fontWeight: "bold",
-          fontFamily: "Georgia, serif",
+          writingMode: "vertical-rl",
+          textOrientation: "mixed",
+          transform: "rotate(180deg)",
+          fontSize: "9px",
+          color: "rgba(255,255,255,0.6)",
+          fontFamily: "system-ui, sans-serif",
+          letterSpacing: "3px",
+          textTransform: "uppercase",
+          fontWeight: 600,
+        }}>
+          {category ?? "AI Training"}
+        </div>
+        {/* Diamond accent */}
+        <div style={{ width: "8px", height: "8px", background: "rgba(255,255,255,0.4)", transform: "rotate(45deg)", margin: "12px 0" }} />
+        <div style={{
+          writingMode: "vertical-rl",
+          textOrientation: "mixed",
+          transform: "rotate(180deg)",
+          fontSize: "9px",
+          color: "rgba(255,255,255,0.4)",
+          fontFamily: "'Courier New', monospace",
           letterSpacing: "1px",
-          marginBottom: "12px",
-          textShadow: "0 2px 20px rgba(212,168,67,0.3)",
         }}>
-          {recipientName}
-        </div>
-
-        {/* "has successfully completed" */}
-        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "13px", fontStyle: "italic", marginBottom: "14px", fontFamily: "Georgia, serif" }}>
-          has successfully completed
-        </div>
-
-        {/* Course title */}
-        <div style={{
-          color: "#f0c96b",
-          fontSize: "19px",
-          fontWeight: "bold",
-          fontFamily: "Georgia, serif",
-          letterSpacing: "0.5px",
-          marginBottom: "6px",
-          maxWidth: "600px",
-          margin: "0 auto 6px",
-        }}>
-          {courseTitle}
-        </div>
-
-        {/* Instructor */}
-        <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "12px", fontFamily: "system-ui, sans-serif", marginBottom: "28px" }}>
-          Taught by {instructor}
-        </div>
-
-        {/* Bottom row */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "8px", paddingTop: "16px", borderTop: "1px solid rgba(212,168,67,0.2)" }}>
-          <div style={{ textAlign: "left" }}>
-            <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "9px", letterSpacing: "3px", fontFamily: "system-ui, sans-serif", marginBottom: "4px", textTransform: "uppercase" }}>Date Issued</div>
-            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "12px", fontFamily: "Georgia, serif" }}>{date}</div>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <svg width="44" height="44" viewBox="0 0 44 44">
-              <circle cx="22" cy="22" r="20" fill="none" stroke="#d4a843" strokeWidth="1.5" opacity="0.6" />
-              <path d="M22 10 L25.5 18.5 L35 19.5 L28 26 L30 35 L22 30.5 L14 35 L16 26 L9 19.5 L18.5 18.5 Z" fill="#d4a843" opacity="0.7" />
-            </svg>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "9px", letterSpacing: "3px", fontFamily: "system-ui, sans-serif", marginBottom: "4px", textTransform: "uppercase" }}>Certificate ID</div>
-            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "12px", fontFamily: "system-ui, 'Courier New', monospace", letterSpacing: "1px" }}>{certCode}</div>
-          </div>
+          {certCode}
         </div>
       </div>
     </div>
@@ -193,26 +239,21 @@ function CertificateDisplay({
 export default function CertificatePage({ courseId }: { courseId: number }) {
   const certRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
-  const [, navigate] = useLocation();
 
   const { user, isAuthenticated } = useAuth();
   const { data: certificates, isLoading: certsLoading } = useGetCertificates();
   const { data: course } = useGetCourse(courseId, { query: { enabled: !!courseId } });
-  const { data: progress } = useGetProgress();
+  const { data: stats } = useGetCourseStats(courseId, { query: { enabled: !!courseId } });
 
   const issueMutation = useIssueCertificate();
 
   const cert = certificates?.find((c) => c.courseId === courseId);
 
-  const completedLessonIds = new Set(
-    (progress ?? []).filter((p) => p.completed).map((p) => p.lessonId)
-  );
-
   const totalLessons = course?.totalLessons ?? 0;
   const completedInCourse = course?.modules
     ? course.modules.reduce((acc, mod) => acc + (mod.completedLessons ?? 0), 0)
     : 0;
-  const isFullyComplete = totalLessons > 0 && completedInCourse >= totalLessons;
+  const isFullyComplete = stats?.completionPercent === 100 || (totalLessons > 0 && completedInCourse >= totalLessons);
 
   const recipientName = isAuthenticated && user
     ? [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || "Learner"
@@ -230,7 +271,7 @@ export default function CertificatePage({ courseId }: { courseId: number }) {
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: null,
+        backgroundColor: "#ffffff",
         logging: false,
       });
       const link = document.createElement("a");
@@ -247,9 +288,9 @@ export default function CertificatePage({ courseId }: { courseId: number }) {
   const isLoading = certsLoading && !cert;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       {/* Top bar */}
-      <div className="border-b bg-card/50 backdrop-blur px-6 py-4 flex items-center justify-between">
+      <div className="border-b bg-white px-6 py-4 flex items-center justify-between shadow-sm">
         <Link href={`/courses/${courseId}`}>
           <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-4 w-4" />
@@ -285,10 +326,10 @@ export default function CertificatePage({ courseId }: { courseId: number }) {
             </div>
 
             {/* Certificate preview */}
-            <div className="flex justify-center mb-8 overflow-x-auto">
+            <div className="flex justify-center mb-8 overflow-x-auto pb-2">
               <div
                 ref={certRef}
-                className="shadow-2xl rounded-lg overflow-hidden"
+                className="rounded-lg overflow-hidden"
                 style={{ minWidth: "900px" }}
               >
                 <CertificateDisplay
@@ -298,6 +339,9 @@ export default function CertificatePage({ courseId }: { courseId: number }) {
                   issuedAt={cert.issuedAt}
                   certId={cert.id}
                   courseId={cert.courseId}
+                  category={course?.category}
+                  level={course?.level}
+                  durationHours={course?.durationHours}
                 />
               </div>
             </div>
